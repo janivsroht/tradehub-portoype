@@ -1,0 +1,57 @@
+generator client {
+provider = "prisma-client-js"
+previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+provider = "sqlite"
+url      = "file:./dev.db"
+}
+
+model UserData {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+
+  itemsForSale Item[]        @relation("Seller")           // 👈 One-to-many from seller
+  purchases    BuyRequest[]  @relation("BuyerRequests")    // 👈 Buyer's requests
+  sales        BuyRequest[]  @relation("SellerRequests")   // 👈 Seller's received requests
+}
+
+
+
+model Item {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  imageUrl    String?
+
+  sellerId    Int
+  seller      UserData @relation("Seller", fields: [sellerId], references: [id]) // 👈 This is what's missing
+
+  isSold      Boolean  @default(false)
+
+  buyRequests BuyRequest[] // 👈 One item can have many requests
+}
+
+
+model BuyRequest {
+  id        Int      @id @default(autoincrement())
+
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id]) // 👈 Add this
+
+  buyerId   Int
+  buyer     UserData @relation("BuyerRequests", fields: [buyerId], references: [id]) // 👈 Required for relation
+
+  sellerId  Int
+  seller    UserData @relation("SellerRequests", fields: [sellerId], references: [id]) // 👈 Required for relation
+
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+}
+
+
+
